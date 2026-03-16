@@ -1,25 +1,39 @@
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
-from app.exceptions.custom_exceptions import EmailAlreadyExistsException, InvalidCredentialsException, InvalidAuthorizationException, UserNotFoundException
+from app.exceptions.custom_exceptions import (
+    EmailAlreadyExistsException,
+    FilenameMissingException,
+    InvalidCredentialsException,
+    InvalidAuthorizationException,
+    PostgresEnvironmentNotSetException,
+    SqlLiteEnvironmentNotSetException,
+    UserNotFoundException,
+)
 
 
 def register_exception_handlers(app: FastAPI):
     @app.exception_handler(EmailAlreadyExistsException)
-    async def email_already_exists_handler(_request: Request, exc: EmailAlreadyExistsException):
+    async def email_already_exists_handler(
+        _request: Request, exc: EmailAlreadyExistsException
+    ):
         return JSONResponse(
             status_code=409,
             content={"detail": f"Email '{exc.email}' is already registered"},
         )
 
     @app.exception_handler(InvalidCredentialsException)
-    async def invalid_credentials_handler(_request: Request, exc: InvalidCredentialsException):
+    async def invalid_credentials_handler(
+        _request: Request, exc: InvalidCredentialsException
+    ):
         return JSONResponse(
             status_code=401,
             content={"detail": "The credentials you have submitted are incorrect."},
         )
 
     @app.exception_handler(InvalidAuthorizationException)
-    async def invalid_authorization_handler(_request: Request, exc: InvalidAuthorizationException):
+    async def invalid_authorization_handler(
+        _request: Request, exc: InvalidAuthorizationException
+    ):
         return JSONResponse(
             status_code=401,
             content={"detail": "Invalid or missing authorization token."},
@@ -30,4 +44,31 @@ def register_exception_handlers(app: FastAPI):
         return JSONResponse(
             status_code=404,
             content={"detail": "User not found."},
+        )
+
+    @app.exception_handler(FilenameMissingException)
+    async def filename_missing_handler(
+        _request: Request, exc: FilenameMissingException
+    ):
+        return JSONResponse(
+            status_code=400,
+            content={"detail": "Filename is required."},
+        )
+
+    @app.exception_handler(SqlLiteEnvironmentNotSetException)
+    async def sqlite_configuration_missing_handler(
+        _request: Request, exc: SqlLiteEnvironmentNotSetException
+    ):
+        return JSONResponse(
+            status_code=500,
+            content={"detail": "SQL Lite configuration incomplete."},
+        )
+
+    @app.exception_handler(PostgresEnvironmentNotSetException)
+    async def postgresql_configuration_missing_handler(
+        _request: Request, exc: PostgresEnvironmentNotSetException
+    ):
+        return JSONResponse(
+            status_code=500,
+            content={"detail": "PostgreSQL configuration incomplete."},
         )
