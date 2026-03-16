@@ -2,6 +2,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from app.exceptions.custom_exceptions import (
     EmailAlreadyExistsException,
+    FileNotFoundException,
     FilenameMissingException,
     InvalidCredentialsException,
     InvalidAuthorizationException,
@@ -72,3 +73,7 @@ def register_exception_handlers(app: FastAPI):
             status_code=500,
             content={"detail": "PostgreSQL configuration incomplete."},
         )
+
+    @app.exception_handler(FileNotFoundException)
+    async def file_not_found_handler(_request: Request, exc: FileNotFoundException):
+        return JSONResponse(status_code=404, content={"detail": "File not found"})

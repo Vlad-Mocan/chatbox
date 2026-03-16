@@ -32,3 +32,8 @@ class SqlLiteEnvironmentNotSetException(Exception):
 class PostgresEnvironmentNotSetException(Exception):
     def __init__(self):
         super().__init__("PostgreSQL environment variable is not set")
+
+
+class FileNotFoundException(Exception):
+    def __init__(self):
+        super().__init__("File cannot be found")

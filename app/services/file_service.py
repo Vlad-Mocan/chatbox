@@ -3,7 +3,10 @@ from sqlalchemy.orm import Session
 from pathlib import Path
 import uuid
 
-from app.exceptions.custom_exceptions import FilenameMissingException
+from app.exceptions.custom_exceptions import (
+    FileNotFoundException,
+    FilenameMissingException,
+)
 from app.models.file import FileModel
 from app.models.user import User
 from app.repositories.file_repository import FileRepository
@@ -39,5 +42,22 @@ class FileService:
         saved_file = self.file_repo.create(file_record)
         return saved_file
 
-    async def list_files_for_user(self, current_user_id: int):
-        return self.file_repo.get_by_user_id(current_user_id)
+    def list_files_information_for_user(self, current_user_id: int):
+        files = self.file_repo.get_all_by_user_id(current_user_id)
+
+        if not files:
+            raise FileNotFoundException()
+
+    async def delete_file(self, file_id, current_user_id):
+        file_entry = self.file_repo.get_by_id_and_user_id(file_id, current_user_id)
+
+        if not file_entry:
+            raise FileNotFoundException()
+
+        file_path = Path(file_entry.path)
+        if file_path.exists():
+            file_path.unlink()
+        else:
+            print("File doesn't exist on the disk!")
+
+        self.file_repo.delete(file_entry)
