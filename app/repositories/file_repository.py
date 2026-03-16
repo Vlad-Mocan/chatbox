@@ -30,3 +30,9 @@ class FileRepository:
     def delete(self, file: FileModel):
         self.db.delete(file)
         self.db.commit()
+
+    def create_file_content(self, file_content: FileContent) -> FileContent:
+        self.db.add(file_content)
+        self.db.commit()
+        self.db.refresh(file_content)
+        return file_content
