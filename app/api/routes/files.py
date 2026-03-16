@@ -19,4 +19,4 @@ async def upload_file(
     return await FileService(db).upload_file(file, current_user.id)
 
 
-# @router.get("", response_model=List[FileResponse], status_code=200)
+@router.get("", response_model=List[FileResponse], status_code=200)
