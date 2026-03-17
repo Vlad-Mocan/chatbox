@@ -14,7 +14,7 @@ class FileModel(Base):
     content_type = Column(String, nullable=False)
     size = Column(Integer, nullable=False)
     path = Column(String, nullable=False)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    created_at = Column(DateTime(timezone=True), server_default=func.now())  # pylint: disable=not-callable
 
 
 class FileContent(Base):

@@ -23,57 +23,47 @@ def register_exception_handlers(app: FastAPI):
         )
 
     @app.exception_handler(InvalidCredentialsException)
-    async def invalid_credentials_handler(
-        _request: Request, exc: InvalidCredentialsException
-    ):
+    async def invalid_credentials_handler(_request: Request):
         return JSONResponse(
             status_code=401,
             content={"detail": "The credentials you have submitted are incorrect."},
         )
 
     @app.exception_handler(InvalidAuthorizationException)
-    async def invalid_authorization_handler(
-        _request: Request, exc: InvalidAuthorizationException
-    ):
+    async def invalid_authorization_handler(_request: Request):
         return JSONResponse(
             status_code=401,
             content={"detail": "Invalid or missing authorization token."},
         )
 
     @app.exception_handler(UserNotFoundException)
-    async def user_not_found_handler(_request: Request, exc: UserNotFoundException):
+    async def user_not_found_handler(_request: Request):
         return JSONResponse(
             status_code=404,
             content={"detail": "User not found."},
         )
 
     @app.exception_handler(FilenameMissingException)
-    async def filename_missing_handler(
-        _request: Request, exc: FilenameMissingException
-    ):
+    async def filename_missing_handler(_request: Request):
         return JSONResponse(
             status_code=400,
             content={"detail": "Filename is required."},
         )
 
     @app.exception_handler(SqlLiteEnvironmentNotSetException)
-    async def sqlite_configuration_missing_handler(
-        _request: Request, exc: SqlLiteEnvironmentNotSetException
-    ):
+    async def sqlite_configuration_missing_handler(_request: Request):
         return JSONResponse(
             status_code=500,
             content={"detail": "SQL Lite configuration incomplete."},
         )
 
     @app.exception_handler(PostgresEnvironmentNotSetException)
-    async def postgresql_configuration_missing_handler(
-        _request: Request, exc: PostgresEnvironmentNotSetException
-    ):
+    async def postgresql_configuration_missing_handler(_request: Request):
         return JSONResponse(
             status_code=500,
             content={"detail": "PostgreSQL configuration incomplete."},
         )
 
     @app.exception_handler(FileNotFoundException)
-    async def file_not_found_handler(_request: Request, exc: FileNotFoundException):
+    async def file_not_found_handler(_request: Request):
         return JSONResponse(status_code=404, content={"detail": "File not found"})
