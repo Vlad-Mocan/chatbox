@@ -2,7 +2,7 @@ from fastapi import UploadFile
 from sqlalchemy.orm import Session
 from pathlib import Path
 import uuid
-
+import logging
 from app.exceptions.custom_exceptions import (
     FileNotFoundException,
     FilenameMissingException,
@@ -12,6 +12,8 @@ from app.repositories.file_repository import FileRepository
 from sqlalchemy.sql import func
 
 UPLOAD_DIR = Path("files")
+
+logger = logging.getLogger(__name__)
 
 
 class FileService:
@@ -65,19 +67,14 @@ class FileService:
                 file_id=file_record.id,
                 content_tsv=func.to_tsvector("english", text_content),
             )
-            self.file_repo.add(content_entry)
+            saved_file = self.file_repo.create_file_with_content(
+                file_record, content_entry
+            )
 
-        self.file_repo.commit()
-        self.file_repo.refresh(file_record)
         return saved_file
 
     def list_files_information_for_user(self, current_user_id: int):
-        files = self.file_repo.get_all_by_user_id(current_user_id)
-
-        if not files:
-            raise FileNotFoundException()
-
-        return files
+        return self.file_repo.get_all_by_user_id(current_user_id)
 
     async def delete_file(self, file_id, current_user_id):
         file_entry = self.file_repo.get_by_id_and_user_id(file_id, current_user_id)
@@ -90,7 +87,9 @@ class FileService:
         try:
             Path(file_entry.path).unlink(missing_ok=True)
         except OSError as e:
-            print(f"File record deleted but disk file could not be removed: {e}")
+            logger.warning(
+                f"File record deleted but disk file could not be removed: {e}"
+            )
 
-    def search_file_content(self, q: str):
-        return self.file_repo.search_files_content(q)
+    def search_file_content(self, q: str, current_user_id: int):
+        return self.file_repo.search_files_content(q, current_user_id)

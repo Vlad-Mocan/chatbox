@@ -24,7 +24,7 @@ class FileRepository:
     def get_by_id_and_user_id(self, file_id: int, current_user_id: int) -> FileModel:
         return (
             self.db.query(FileModel)
-            .filter(FileModel.id == file_id and FileModel.user_id == current_user_id)
+            .filter(FileModel.id == file_id, FileModel.user_id == current_user_id)
             .first()
         )
 
@@ -32,11 +32,13 @@ class FileRepository:
         self.db.delete(file)
         self.db.commit()
 
-    def create_file_content(self, file_content: FileContent) -> FileContent:
+    def create_file_with_content(
+        self, file_record: FileModel, file_content: FileContent
+    ) -> FileModel:
         self.db.add(file_content)
         self.db.commit()
-        self.db.refresh(file_content)
-        return file_content
+        self.db.refresh(file_record)
+        return file_record
 
     def add(self, record):
         self.db.add(record)
@@ -47,12 +49,13 @@ class FileRepository:
     def refresh(self, record):
         self.db.refresh(record)
 
-    def search_files_content(self, q: str):
+    def search_files_content(self, q: str, current_user_id: int) -> List[FileModel]:
         return (
             self.db.query(FileModel)
             .join(FileContent)
             .filter(
-                FileContent.content_tsv.op("@@")(func.plainto_tsquery("english", q))
+                FileModel.user_id == current_user_id,
+                FileContent.content_tsv.op("@@")(func.plainto_tsquery("english", q)),
             )
             .all()
         )

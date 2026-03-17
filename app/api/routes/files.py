@@ -27,5 +27,18 @@ def get_files_information_for_user(
 
 
 @router.get("/search", response_model=list[FileResponse])
-def search_file_content(q: str, db: Session = Depends(get_db)):
-    return FileService(db).search_file_content(q)
+def search_file_content(
+    q: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    return FileService(db).search_file_content(q, current_user.id)
+
+
+@router.delete("/{file_id}", status_code=204)
+async def delete_file(
+    file_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    await FileService(db).delete_file(file_id, current_user.id)
