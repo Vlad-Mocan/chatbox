@@ -44,34 +44,36 @@ class FileService:
             raise FilenameMissingException()
 
         file_disk_info = await self.upload_file_to_disk(file, current_user_id)
+        content = file_disk_info["content"]
+
+        try:
+            text_content = content.decode("utf-8", errors="ignore")
+        except UnicodeDecodeError:
+            text_content = ""
 
         file_record = FileModel(
             user_id=current_user_id,
             original_name=file.filename,
             random_name=file_disk_info["random_filename"],
             content_type=file.content_type,
-            size=file.size,
+            size=len(content),
             path=str(file_disk_info["full_path"]),
         )
 
-        saved_file = self.file_repo.create(file_record)
-
-        content = file_disk_info["content"]
-        try:
-            text_content = content.decode("utf-8", errors="ignore")
-        except UnicodeDecodeError:
-            text_content = ""
-
+        content_entry = None
         if text_content:
             content_entry = FileContent(
                 file_id=file_record.id,
                 content_tsv=func.to_tsvector("english", text_content),
             )
-            saved_file = self.file_repo.create_file_with_content(
+
+        try:
+            return self.file_repo.create_with_optional_content(
                 file_record, content_entry
             )
-
-        return saved_file
+        except Exception:
+            file_disk_info["full_path"].unlink(missing_ok=True)
+            raise
 
     def list_files_information_for_user(self, current_user_id: int):
         return self.file_repo.get_all_by_user_id(current_user_id)
@@ -88,8 +90,11 @@ class FileService:
             Path(file_entry.path).unlink(missing_ok=True)
         except OSError as e:
             logger.warning(
-                f"File record deleted but disk file could not be removed: {e}"
+                "File record deleted but disk file could not be removed: %s", e
             )
 
     def search_file_content(self, q: str, current_user_id: int):
+        if not q:
+            return []
+
         return self.file_repo.search_files_content(q, current_user_id)

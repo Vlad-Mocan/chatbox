@@ -1,8 +1,10 @@
+from typing import Optional
+
 from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    sqlite_database_url: str
+    sqlite_database_url: Optional[str] = None
     postgres_database_url: str
     secret_key: str
     algorithm: str

@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 from sqlalchemy.orm import Session
 
@@ -10,11 +10,19 @@ class FileRepository:
     def __init__(self, db: Session):
         self.db = db
 
-    def create(self, file: FileModel):
-        self.db.add(file)
+    def create_with_optional_content(
+        self, file_record: FileModel, content_entry: Optional[FileContent]
+    ) -> FileModel:
+        self.db.add(file_record)
+        self.db.flush()
+
+        if content_entry is not None:
+            content_entry.file_id = file_record.id
+            self.db.add(content_entry)
+
         self.db.commit()
-        self.db.refresh(file)
-        return file
+        self.db.refresh(file_record)
+        return file_record
 
     def get_all_by_user_id(self, current_user_id: int) -> List[FileModel]:
         return (
@@ -31,23 +39,6 @@ class FileRepository:
     def delete(self, file: FileModel):
         self.db.delete(file)
         self.db.commit()
-
-    def create_file_with_content(
-        self, file_record: FileModel, file_content: FileContent
-    ) -> FileModel:
-        self.db.add(file_content)
-        self.db.commit()
-        self.db.refresh(file_record)
-        return file_record
-
-    def add(self, record):
-        self.db.add(record)
-
-    def commit(self):
-        self.db.commit()
-
-    def refresh(self, record):
-        self.db.refresh(record)
 
     def search_files_content(self, q: str, current_user_id: int) -> List[FileModel]:
         return (
