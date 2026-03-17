@@ -5,6 +5,8 @@ from sqlalchemy.orm import Session
 from app.database.schema import FileModel, FileContent
 from sqlalchemy.sql import func
 
+from app.models.file import FileResponse
+
 
 class FileRepository:
     def __init__(self, db: Session):
@@ -40,13 +42,29 @@ class FileRepository:
         self.db.delete(file)
         self.db.commit()
 
-    def search_files_content(self, q: str, current_user_id: int) -> List[FileModel]:
-        return (
-            self.db.query(FileModel)
-            .join(FileContent)
+    def search_files_content(
+        self, q: str, rank, limit: int, offset: int, current_user_id: int
+    ) -> List[FileModel]:
+        rows = (
+            self.db.query(FileModel, rank)
+            .join(FileContent, FileContent.file_id == FileModel.id)
             .filter(
                 FileModel.user_id == current_user_id,
                 FileContent.content_tsv.op("@@")(func.plainto_tsquery("english", q)),
             )
+            .order_by(rank.desc(), FileModel.created_at.desc())
+            .offset(offset)
+            .limit(limit)
             .all()
         )
+
+        results: list[dict] = []
+
+        for file_record, file_rank in rows:
+            results.append(
+                {
+                    "rank": float(file_rank or 0.0),
+                    "file": FileResponse.model_validate(file_record),
+                }
+            )
+        return results

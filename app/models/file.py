@@ -10,3 +10,8 @@ class FileResponse(BaseModel):
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class SearchResultResponse(BaseModel):
+    rank: float
+    file: FileResponse

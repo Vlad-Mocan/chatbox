@@ -9,7 +9,7 @@ from app.exceptions.custom_exceptions import (
 )
 from app.database.schema import FileModel, FileContent
 from app.repositories.file_repository import FileRepository
-from sqlalchemy.sql import func
+from sqlalchemy import func
 
 UPLOAD_DIR = Path("files")
 
@@ -64,7 +64,6 @@ class FileService:
         content_entry = None
         if text_content:
             content_entry = FileContent(
-                file_id=file_record.id,
                 content_tsv=func.to_tsvector("english", text_content),
             )
 
@@ -94,8 +93,18 @@ class FileService:
                 "File record deleted but disk file could not be removed: %s", e
             )
 
-    def search_file_content(self, q: str, current_user_id: int):
+    def search_file_content(
+        self, q: str, limit: int, offset: int, current_user_id: int
+    ):
         if not q:
             return []
 
-        return self.file_repo.search_files_content(q, current_user_id)
+        limit = max(1, min(limit, 100))
+        offset = max(0, offset)
+
+        tsquery = func.websearch_to_tsquery("english", q)
+        rank = func.ts_rank_cd(FileContent.content_tsv, tsquery).label("rank")
+
+        return self.file_repo.search_files_content(
+            q, rank, limit, offset, current_user_id
+        )
