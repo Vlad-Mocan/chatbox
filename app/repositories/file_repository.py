@@ -3,7 +3,6 @@ from typing import List, Optional
 from sqlalchemy.orm import Session
 
 from app.database.schema import FileModel, FileContent
-from sqlalchemy.sql import func
 
 from app.models.file import FileResponse
 
@@ -43,14 +42,14 @@ class FileRepository:
         self.db.commit()
 
     def search_files_content(
-        self, q: str, rank, limit: int, offset: int, current_user_id: int
+        self, rank, tsquery, limit: int, offset: int, current_user_id: int
     ) -> List[FileModel]:
         rows = (
             self.db.query(FileModel, rank)
             .join(FileContent, FileContent.file_id == FileModel.id)
             .filter(
                 FileModel.user_id == current_user_id,
-                FileContent.content_tsv.op("@@")(func.plainto_tsquery("english", q)),
+                FileContent.content_tsv.op("@@")(tsquery),
             )
             .order_by(rank.desc(), FileModel.created_at.desc())
             .offset(offset)

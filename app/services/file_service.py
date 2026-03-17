@@ -1,15 +1,16 @@
-from fastapi import UploadFile
-from sqlalchemy.orm import Session
+import logging
 from pathlib import Path
 import uuid
-import logging
+from sqlalchemy import func
+from sqlalchemy.orm import Session
+from fastapi import UploadFile
+
 from app.exceptions.custom_exceptions import (
     FileNotFoundException,
     FilenameMissingException,
 )
 from app.database.schema import FileModel, FileContent
 from app.repositories.file_repository import FileRepository
-from sqlalchemy import func
 
 UPLOAD_DIR = Path("files")
 
@@ -78,6 +79,14 @@ class FileService:
     def list_files_information_for_user(self, current_user_id: int):
         return self.file_repo.get_all_by_user_id(current_user_id)
 
+    def get_file_content(self, file_id: int, current_user_id: int):
+        file_entry = self.file_repo.get_by_id_and_user_id(file_id, current_user_id)
+
+        if not file_entry:
+            raise FileNotFoundException()
+
+        return file_entry
+
     async def delete_file(self, file_id, current_user_id):
         file_entry = self.file_repo.get_by_id_and_user_id(file_id, current_user_id)
 
@@ -106,5 +115,5 @@ class FileService:
         rank = func.ts_rank_cd(FileContent.content_tsv, tsquery).label("rank")
 
         return self.file_repo.search_files_content(
-            q, rank, limit, offset, current_user_id
+            rank, tsquery, limit, offset, current_user_id
         )

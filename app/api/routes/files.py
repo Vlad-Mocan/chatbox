@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, File, UploadFile
 from sqlalchemy.orm import Session
+from fastapi.responses import FileResponse as DiskFileResponse
 
 from app.core.security import get_current_user
 from app.database.session import get_db
@@ -35,6 +36,20 @@ def search_file_content(
     db: Session = Depends(get_db),
 ):
     return FileService(db).search_file_content(q, limit, offset, current_user.id)
+
+
+@router.get("/{file_id}/content")
+def get_file_content(
+    file_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    file_entry = FileService(db).get_file_content(file_id, current_user.id)
+    return DiskFileResponse(
+        path=file_entry.path,
+        media_type=file_entry.content_type,
+        filename=file_entry.original_name,
+    )
 
 
 @router.delete("/{file_id}", status_code=204)
