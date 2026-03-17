@@ -1,5 +1,3 @@
-from typing import List
-
 from fastapi import APIRouter, Depends, File, UploadFile
 from sqlalchemy.orm import Session
 
@@ -21,8 +19,13 @@ async def upload_file(
     return await FileService(db).upload_file(file, current_user.id)
 
 
-@router.get("", response_model=List[FileResponse], status_code=200)
+@router.get("", response_model=list[FileResponse], status_code=200)
 def get_files_information_for_user(
     current_user: User = Depends(get_current_user), db: Session = Depends(get_db)
 ):
     return FileService(db).list_files_information_for_user(current_user.id)
+
+
+@router.get("/search", response_model=list[FileResponse])
+def search_file_content(q: str, db: Session = Depends(get_db)):
+    return FileService(db).search_file_content(q)

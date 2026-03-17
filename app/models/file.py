@@ -23,6 +23,6 @@ class FileContent(Base):
     file_id = Column(Integer, ForeignKey("files.id"), primary_key=True)
     content_tsv = Column(TSVECTOR, nullable=False)
 
-    __table_args__ = Index(
-        "idx_file_content_tsv", "content_tsv", postgresql_using="gin"
+    __table_args__ = (
+        Index("idx_file_content_tsv", "content_tsv", postgresql_using="gin"),
     )

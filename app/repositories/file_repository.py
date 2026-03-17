@@ -2,7 +2,8 @@ from typing import List
 
 from sqlalchemy.orm import Session
 
-from app.models.file import FileModel
+from app.models.file import FileModel, FileContent
+from sqlalchemy.sql import func
 
 
 class FileRepository:
@@ -36,3 +37,22 @@ class FileRepository:
         self.db.commit()
         self.db.refresh(file_content)
         return file_content
+
+    def add(self, record):
+        self.db.add(record)
+
+    def commit(self):
+        self.db.commit()
+
+    def refresh(self, record):
+        self.db.refresh(record)
+
+    def search_files_content(self, q: str):
+        return (
+            self.db.query(FileModel)
+            .join(FileContent)
+            .filter(
+                FileContent.content_tsv.op("@@")(func.plainto_tsquery("english", q))
+            )
+            .all()
+        )
