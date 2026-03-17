@@ -2,7 +2,7 @@ from typing import List, Optional
 
 from sqlalchemy.orm import Session
 
-from app.models.file import FileModel, FileContent
+from app.database.schema import FileModel, FileContent
 from sqlalchemy.sql import func
 
 

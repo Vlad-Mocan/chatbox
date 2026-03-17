@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     secret_key: str
     algorithm: str
     access_token_expire_minutes: int
+    voyage_api_key: Optional[str] = None
 
     class Config:
         env_file = ".env"

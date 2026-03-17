@@ -7,7 +7,7 @@ from app.exceptions.custom_exceptions import (
     FileNotFoundException,
     FilenameMissingException,
 )
-from app.models.file import FileModel, FileContent
+from app.database.schema import FileModel, FileContent
 from app.repositories.file_repository import FileRepository
 from sqlalchemy.sql import func
 
@@ -46,16 +46,17 @@ class FileService:
         file_disk_info = await self.upload_file_to_disk(file, current_user_id)
         content = file_disk_info["content"]
 
-        try:
+        is_text_file = file.content_type and file.content_type.startswith("text/")
+        if is_text_file:
             text_content = content.decode("utf-8", errors="ignore")
-        except UnicodeDecodeError:
+        else:
             text_content = ""
 
         file_record = FileModel(
             user_id=current_user_id,
             original_name=file.filename,
             random_name=file_disk_info["random_filename"],
-            content_type=file.content_type,
+            content_type=file.content_type or "application/octet-stream",
             size=len(content),
             path=str(file_disk_info["full_path"]),
         )

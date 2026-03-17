@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
-from app.models.user import User
-from app.schemas.user import TokenResponse, UserCreate, UserLogIn, UserResponse
+from app.database.schema import User
+from app.models.user import TokenResponse, UserCreate, UserLogIn, UserResponse
 from app.core.security import create_token, hash_password, verify_password
 from app.repositories.user_repository import UserRepository
 from app.exceptions.custom_exceptions import (

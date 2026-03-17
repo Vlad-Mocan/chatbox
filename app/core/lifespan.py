@@ -1,7 +1,7 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from app.database.session import Base, engine
-from app.models import user, file
+from app.database.schema import User, FileModel, FileContent
 
 
 @asynccontextmanager
