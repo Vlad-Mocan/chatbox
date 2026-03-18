@@ -4,6 +4,7 @@ import uuid
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 from fastapi import UploadFile
+import voyageai
 
 from app.exceptions.custom_exceptions import (
     FileNotFoundException,
@@ -11,9 +12,11 @@ from app.exceptions.custom_exceptions import (
 )
 from app.database.schema import FileModel, FileContent
 from app.repositories.file_repository import FileRepository
+from app.core.config import settings
+from app.utils.text_chunking import chunk_by_section, chunk_text_by_sentence
 
 UPLOAD_DIR = Path("files")
-
+client = voyageai.Client(api_key=settings.voyage_api_key)
 logger = logging.getLogger(__name__)
 
 
@@ -62,16 +65,29 @@ class FileService:
             path=str(file_disk_info["full_path"]),
         )
 
-        content_entry = None
+        content_entries = []
+
         if text_content:
-            content_entry = FileContent(
-                content_tsv=func.to_tsvector("english", text_content),
-            )
+            if file.content_type == "text/markdown":
+                chunks = chunk_by_section(text_content)
+            else:
+                chunks = chunk_text_by_sentence(text_content)
+
+            res = client.embed(chunks, model="voyage-3", output_dimension=1024)
+            embeddings = res.embeddings
+
+            for i, (chunk, embedding) in enumerate(zip(chunks, embeddings)):
+                content_entries.append(
+                    FileContent(
+                        text_content=chunk,
+                        embedding=embedding,
+                        content_tsv=func.to_tsvector("english", chunk),
+                        chunk_index=i,
+                    )
+                )
 
         try:
-            return self.file_repo.create_with_optional_content(
-                file_record, content_entry
-            )
+            return self.file_repo.create_with_chunks(file_record, content_entries)
         except Exception:
             file_disk_info["full_path"].unlink(missing_ok=True)
             raise
@@ -116,4 +132,20 @@ class FileService:
 
         return self.file_repo.search_files_content(
             rank, tsquery, limit, offset, current_user_id
+        )
+
+    def semantic_search_file_content(
+        self, q: str, limit: int, offset: int, current_user_id: int
+    ):
+        if not q:
+            return []
+
+        limit = max(1, min(limit, 100))
+        offset = max(0, offset)
+
+        response = client.embed(q, model="voyage-3", output_dimension=1024)
+        embedding = response.embeddings[0]
+
+        return self.file_repo.search_files_content_semantic(
+            embedding, limit, offset, current_user_id
         )

@@ -5,7 +5,11 @@ from fastapi.responses import FileResponse as DiskFileResponse
 from app.core.security import get_current_user
 from app.database.session import get_db
 from app.database.schema import User
-from app.models.file import FileResponse, SearchResultResponse
+from app.models.file import (
+    FileResponse,
+    SearchResultResponse,
+    SemanticSearchResultResponse,
+)
 from app.services.file_service import FileService
 
 router = APIRouter()
@@ -36,6 +40,19 @@ def search_file_content(
     db: Session = Depends(get_db),
 ):
     return FileService(db).search_file_content(q, limit, offset, current_user.id)
+
+
+@router.get("/semantic-search", response_model=list[SemanticSearchResultResponse])
+def semantic_search_file_content(
+    q: str,
+    limit: int = 20,
+    offset: int = 0,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    return FileService(db).semantic_search_file_content(
+        q, limit, offset, current_user.id
+    )
 
 
 @router.get("/{file_id}/content")

@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List
 
 from sqlalchemy.orm import Session
 
@@ -11,19 +11,25 @@ class FileRepository:
     def __init__(self, db: Session):
         self.db = db
 
-    def create_with_optional_content(
-        self, file_record: FileModel, content_entry: Optional[FileContent]
+    def create_with_chunks(
+        self, file_record: FileModel, content_entries: List[FileContent]
     ) -> FileModel:
         self.db.add(file_record)
         self.db.flush()
 
-        if content_entry is not None:
-            content_entry.file_id = file_record.id
-            self.db.add(content_entry)
+        if content_entries:
+            for entry in content_entries:
+                entry.file_id = file_record.id
 
-        self.db.commit()
-        self.db.refresh(file_record)
-        return file_record
+            self.db.add_all(content_entries)
+
+        try:
+            self.db.commit()
+            self.db.refresh(file_record)
+            return file_record
+        except Exception:
+            self.db.rollback()
+            raise
 
     def get_all_by_user_id(self, current_user_id: int) -> List[FileModel]:
         return (
@@ -66,4 +72,32 @@ class FileRepository:
                     "file": FileResponse.model_validate(file_record),
                 }
             )
+        return results
+
+    def search_files_content_semantic(
+        self, query_embedding, limit: int, offset: int, current_user_id: int
+    ):
+        similarity = (1 - FileContent.embedding.cosine_distance(query_embedding)).label(
+            "similarity"
+        )
+
+        rows = (
+            self.db.query(FileModel, similarity)
+            .join(FileContent, FileContent.file_id == FileModel.id)
+            .filter(FileModel.user_id == current_user_id)
+            .order_by(similarity.desc(), FileModel.created_at.desc())
+            .offset(offset)
+            .limit(limit)
+            .all()
+        )
+
+        results = []
+        for file_record, sim in rows:
+            results.append(
+                {
+                    "similarity": float(sim or 0.0),
+                    "file": FileResponse.model_validate(file_record),
+                }
+            )
+
         return results

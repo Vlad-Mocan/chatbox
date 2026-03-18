@@ -15,3 +15,8 @@ class FileResponse(BaseModel):
 class SearchResultResponse(BaseModel):
     rank: float
     file: FileResponse
+
+
+class SemanticSearchResultResponse(BaseModel):
+    similarity: float
+    file: FileResponse
