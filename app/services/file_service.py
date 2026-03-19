@@ -4,7 +4,6 @@ import uuid
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 from fastapi import UploadFile
-import voyageai
 
 from app.exceptions.custom_exceptions import (
     FileNotFoundException,
@@ -12,11 +11,10 @@ from app.exceptions.custom_exceptions import (
 )
 from app.database.schema import FileModel, FileContent
 from app.repositories.file_repository import FileRepository
-from app.core.config import settings
+from app.core.voyage_client import voyage_client as client
 from app.utils.text_chunking import chunk_by_section, chunk_text_by_sentence
 
 UPLOAD_DIR = Path("files")
-client = voyageai.Client(api_key=settings.voyage_api_key)
 logger = logging.getLogger(__name__)
 
 

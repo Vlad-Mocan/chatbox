@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     algorithm: str
     access_token_expire_minutes: int
     voyage_api_key: Optional[str] = None
+    groq_api_key: Optional[str] = None
 
     class Config:
         env_file = ".env"

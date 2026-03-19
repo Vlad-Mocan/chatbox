@@ -101,3 +101,28 @@ class FileRepository:
             )
 
         return results
+
+    def get_chunks_for_rag(
+        self, query_embedding, limit: int, current_user_id: int
+    ) -> List[dict]:
+        similarity = (1 - FileContent.embedding.cosine_distance(query_embedding)).label(
+            "similarity"
+        )
+
+        rows = (
+            self.db.query(FileModel.original_name, FileContent.text_content, similarity)
+            .join(FileContent, FileContent.file_id == FileModel.id)
+            .filter(FileModel.user_id == current_user_id)
+            .order_by(similarity.desc())
+            .limit(limit)
+            .all()
+        )
+
+        return [
+            {
+                "file_name": original_name,
+                "text": text_content,
+                "similarity": float(sim or 0.0),
+            }
+            for original_name, text_content, sim in rows
+        ]
