@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends
-from app.models.user import TokenResponse, UserCreate, UserLogIn, UserResponse
+from app.models.user import TokenResponse, UserCreate, UserLogIn
 from sqlalchemy.orm import Session
 from app.database.session import get_db
 from app.services.user_service import UserService
